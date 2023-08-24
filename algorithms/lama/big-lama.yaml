@@ -1,0 +1,18 @@
+in_channels: 4
+out_channels: 3
+ngf: 64
+downsampling: 3
+blocks: 18
+add_out_act: sigmoid
+init_conv_kwargs:
+  ratio_gin: 0
+  ratio_gout: 0
+  enable_lfu: false
+downsample_conv_kwargs:
+  ratio_gin: ${init_conv_kwargs.ratio_gout}
+  ratio_gout: ${ratio_gin}
+  enable_lfu: false
+resnet_conv_kwargs:
+  ratio_gin: 0.75
+  ratio_gout: ${ratio_gin}
+  enable_lfu: false
