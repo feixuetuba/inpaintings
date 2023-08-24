@@ -1,2 +1,1 @@
-# inpaintings
-inpainting工具
+# 图像补齐工具库
