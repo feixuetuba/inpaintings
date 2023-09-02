@@ -7,9 +7,10 @@ def load_config_file(yaml_file, **kwargs):
     with open(yaml_file, "r") as fd:
         data = fd.read()
 
-    g=re.findall('[\"|\']{3}\b*\n*[\w\W]*\b*\n*[\"|\']{3}', data)
+    g = re.findall('[\"|\']{3}\b*\n*[\w\W]*\b*\n*[\"|\']{3}', data)
 
     data = re.sub('[\"|\']{3}\b*\n*[\w\W]*\b*\n*[\"|\']{3}\b*\n*', '', data)
+    data = data.format(**kwargs)
     cfg = yaml.safe_load(data)
     comment = ""
     if len(g) > 0:
@@ -21,7 +22,6 @@ def load_config_file(yaml_file, **kwargs):
 class Configure(dict):
     def __init__(self, cfg=None, **kwargs):
         comment = ""
-        ROOT = kwargs.get("ROOT", self)
         if cfg is not None:
             if isinstance(cfg, str):
                 if cfg.endswith(".yaml"):
@@ -37,27 +37,9 @@ class Configure(dict):
                 parent_cfg = Configure(v)
                 for k, v in parent_cfg.items():
                     setattr(self, k , v)
-            else:
-                if isinstance(v, str) and re.match('\$?\{.*\}', v) is not None:
-                    if v in kwargs:
-                        v = kwargs[v]
-                    else:
-                        if hasattr(self, v):
-                            v = getattr(self, v)
-                        else:
-                            curr = ROOT
-                            v = re.sub('\$?\{|\}','',v)
-                            for sub in v.split("."):
-                                if hasattr(curr, sub):
-                                    curr = getattr(curr, sub)
-                                elif hasattr(self, sub):
-                                    curr = getattr(self, sub)
-                                else:
-                                    assert False, f"value {v} for {k} no found, stop at >{sub}<"
-                            v = curr
-                elif isinstance(v, dict):
-                    v = Configure(v, ROOT=ROOT)
-                setattr(self, k, v)
+            elif isinstance(v, dict):
+                v = Configure(v)
+            setattr(self, k, v)
 
         for k in self.__class__.__dict__.keys():
             if not (k.startswith('__') and k.endswith('__')) and not k in ('update', 'pop'):

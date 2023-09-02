@@ -18,17 +18,17 @@ class BigLamaModel(BaseModel):
 
     def prepare(self, *args, **kwargs):
         my_dir = os.path.dirname(os.path.abspath(__file__))
-        cfg_file = my_dir + "/big-lama.yaml"
-        cfg = Configure(cfg=cfg_file)
-        cfg["package"] = 'FFCResNet'
-        self.network = load_network("FFCResNetGenerator", cfg)
-        state_dict = torch.load(os.path.join(my_dir, "ckpts", "big_lama_best.pth"))
+        cfg_file = kwargs.get("cfg",my_dir + "/big-lama.yaml")
+        cfg = Configure(cfg=cfg_file, TORCH_HOME=os.environ.get("TORCH_HOME", ""))
+        self.network = load_network("generator",cfg)
+        ckpt_file = cfg.generator.get("checkpoints", os.path.join(my_dir, "ckpts","big_lama_best.pth"))
+        state_dict = torch.load( ckpt_file)
         self.network.load_state_dict(state_dict)
         self.network.to(self.device)
-        self.network.eval()
         self._prepared = True
 
     def forward(self, img, mask, **kwargs):
+        self.network.eval()
         h, w = img.shape[:2]
 
         stride = 8
@@ -58,3 +58,4 @@ class BigLamaModel(BaseModel):
             result = masked_img[..., :3] + mask * predicted
             result = np.clip(result*255, 0, 255).astype(np.uint8)
         return result[:h, :w].astype(np.uint8)
+

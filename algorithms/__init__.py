@@ -18,4 +18,4 @@ class BaseModel:
 
 def get_algorithm(name, **kwargs):
     loader = load_cls(f"algorithms.{name}", "get_model")          #get_model 定义在__init__.py
-    return loader(name, **kwargs)
+    return loader(**kwargs)

@@ -1,18 +1,80 @@
-in_channels: 4
-out_channels: 3
-ngf: 64
-downsampling: 3
-blocks: 18
-add_out_act: sigmoid
-init_conv_kwargs:
-  ratio_gin: 0
-  ratio_gout: 0
-  enable_lfu: false
-downsample_conv_kwargs:
-  ratio_gin: ${init_conv_kwargs.ratio_gout}
-  ratio_gout: ${ratio_gin}
-  enable_lfu: false
-resnet_conv_kwargs:
-  ratio_gin: 0.75
-  ratio_gout: ${ratio_gin}
-  enable_lfu: false
+
+txt_logs_dir: ""
+gpu_ids: [0]
+
+model:
+  cls: InpaintingModel
+  concat_mask: true
+  save_epoch_freq: 1
+
+  losses:
+    l1:
+      weight_missing: 0
+      weight_known: 10
+    perceptual:
+      weight: 0
+    adversarial:
+      kind: r1
+      weight: 10
+      gp_coef: 0.001
+      mask_as_fake_target: true
+      allow_scale_mask: true
+    feature_matching:
+      weight: 100
+    resnet_pl:
+      weight: 30
+      weights_path: {TORCH_HOME}
+
+  optimizers:
+    generator:
+      cls: adam
+      params:
+        lr: 0.001
+        betas: [0.9, 0.99]
+    discriminator:
+      cls: adam
+      params:
+        lr: 0.0001
+        betas: [0.9, 0.99]
+
+generator:
+  in_channels: 4
+  out_channels: 3
+  package: FFCResNet
+  cls: FFCResNetGenerator
+  ngf: 64
+  downsampling: 3
+  blocks: 18
+  add_out_act: sigmoid
+  init_conv_kwargs:
+    ratio_gin: 0
+    ratio_gout: 0
+    enable_lfu: false
+  downsample_conv_kwargs:
+    ratio_gin: 0
+    ratio_gout: 0
+    enable_lfu: false
+  resnet_conv_kwargs:
+    ratio_gin: 0.75
+    ratio_gout: 0.75
+    enable_lfu: false
+
+discriminator:
+  package: pix2pixhd
+  cls: NLayerDiscriminator
+  in_channels: 3
+  ndf: 64
+  n_layers: 4
+
+
+dataset:
+  train:
+    out_size: 256
+    shuffle: True
+    pacakage: BasicDataset
+    cls: BasicDataset
+    batch_size_per_cuda: 2
+    drop_last: True
+    seed: 1377661
+    num_workers: 4
+    dir_path: E:\train_sets\tattoo_inpaint
